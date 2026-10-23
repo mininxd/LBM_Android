@@ -14,15 +14,22 @@ static int g_nintendo;  /* swap A/B and X/Y on physical controllers */
 
 void input_set_nintendo(int on) { g_nintendo = on; g_packet++; }
 
-/* Skip Cutscenes: while the game is in a cutscene (0x9D69B8 == 2; 3 in play,
- * menus and pause) pad 0 taps Start, which skips most cutscenes, then A, which
- * confirms the "Skip" prompt that the others show instead. */
+/* Skip Cutscenes: story cutscenes are levels of their own. While one is
+ * playing or starting, pad 0 taps Start, which skips it, and A, which also
+ * gets past the "press any key" screen of the level loading next. */
 static int g_skip_cutscenes;
 void input_set_skip_cutscenes(int on) { g_skip_cutscenes = on; }
+/* The level being played: world (0x960894) +0x12C; level +0x64 flags, where
+ * 0x20 intro, 0x40 cutscene/midtro and 0x80 outro mark cutscene levels. */
+static int in_cutscene_level(void) {
+    uint32_t w = M32(0x960894), lv = w >= 0x10000 ? M32(w + 0x12C) : 0;
+    if (lv < 0x10000) lv = M32(0xACA89C);  /* none yet: the one being started */
+    return lv >= 0x10000 && (M8(lv + 0x64) & 0xE0);
+}
 static uint16_t skip_tap(void) {
-    if (!g_skip_cutscenes || M32(0x9D69B8) != 2) return 0;
-    uint32_t t = SDL_GetTicks() % 800;  /* Start at 0-120 ms, A at 400-520 ms */
-    return t < 120 ? 0x10 : (t >= 400 && t < 520) ? 0x1000 : 0;
+    if (!g_skip_cutscenes || !in_cutscene_level()) return 0;
+    uint32_t t = SDL_GetTicks() % 300;  /* Start at 0-60 ms, A at 150-210 ms */
+    return t < 60 ? 0x10 : (t >= 150 && t < 210) ? 0x1000 : 0;
 }
 
 static const struct { SDL_Keycode key; uint16_t bit; } k_keymap[] = {

@@ -40,6 +40,10 @@ float g_aspect = 16.f / 9.f;  // width / height of the screen
 
 // The game's VSync option byte, which the menu toggles and the settings save.
 const uint32_t G_VSYNC_OPTION = 0x9D0F3C;
+// Aspect ratio: the setting (pcconfig "Widescreen") and the menu's copy of it.
+// Its menu row is Skip Cutscenes now, so it stays at 3, "From Screen-Res"
+// (0 = 4:3, the game's default, 1 = 16:9, 2 = 16:10).
+const uint32_t G_ASPECT = 0x94C070, G_ASPECT_MENU = 0xAD7294, ASPECT_FROM_RES = 3;
 
 bool available() {
     if (!g_decided) {
@@ -59,6 +63,7 @@ bool enabled() {
     // The game loads and resets its own VSync value; ours always wins, and only
     // the menu changes it (f_6C42C0 below).
     M8(G_VSYNC_OPTION) = g_touch_on;
+    M32(G_ASPECT_MENU) = ASPECT_FROM_RES;
     bool on = g_touch_on;
     if (g_was_on && !on) {
         // Switched off in the menu: release everything the overlay was holding.
@@ -381,6 +386,13 @@ extern "C" void f_7401A0(CPU *c) {
     f_7401A0_guest(c);
 }
 
+// pcconfig "Widescreen" setter, used at load and by the menu's Accept.
+extern "C" void f_524860_guest(CPU *c);
+extern "C" void f_524860(CPU *c) {
+    f_524860_guest(c);
+    if (available()) M32(G_ASPECT) = ASPECT_FROM_RES;
+}
+
 extern "C" void touch_setup_guest(void) {
     if (!available()) return;
     if (FILE *f = fopen(cfg_path().c_str(), "r")) {
@@ -391,6 +403,7 @@ extern "C" void touch_setup_guest(void) {
     input_set_nintendo(g_nintendo);
     input_set_skip_cutscenes(g_skip_cutscenes);
     M8(G_VSYNC_OPTION) = g_touch_on;
+    M32(G_ASPECT) = M32(G_ASPECT_MENU) = ASPECT_FROM_RES;
     uint32_t touch = guest_str("Touch Controls"), quit = guest_str("Quit Game"),
              scale = guest_str("Resolution Scale"), layout = guest_str("Nintendo Button Layout"),
              skip = guest_str("Skip Cutscenes"), title = guest_str("Video and Port Settings");
