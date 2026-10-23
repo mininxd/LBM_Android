@@ -4,6 +4,10 @@ An unofficial "native" Android port of the PC version of *LEGO Batman: The Video
 
 This repository contains no game code or data. You need your own copy of the PC game, which is used as a basis for the recompilation. Personally, I used the Steam version.
 
+Youtube link below:
+
+[![Watch the video](https://img.youtube.com/vi/mbDd5ZudTKU/hqdefault.jpg)](https://www.youtube.com/embed/mbDd5ZudTKU)
+
 ## Functionality
 - **Static recompilation.** This project is *not* a decompilation but a recompilation; Basically, it's just converting one type of code to another rather than re-creating the original source.
 - **Graphics:** a patched [dxvk-native](https://github.com/Joshua-Ashton/dxvk-native) (native-1.9.2b) translates D3D9 to Vulkan 1.1. You must meet this requirement for the game to even launch, but most devices support it nowadays.
