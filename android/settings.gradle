@@ -1,0 +1,2 @@
+rootProject.name = 'LegoBatman'
+include ':app'
