@@ -30,7 +30,6 @@ Everything comes from your own PC install of *LEGO Batman: The Videogame* (2008)
 | For building on PC | For playing on Android
 | :------------------ | -------------------:
 | LEGOBatman.exe | LEGOBatman.exe
-| d3dx9_35.dll (32-bit) | d3dx9_35.dll (32-bit)
 | binkw32.dll | binkw32.dll
 | GameIcon.ico | GameIcon.ico
 | d3dx9_35.dll (32-bit) | d3dx9_35.dll (32-bit)
@@ -41,6 +40,8 @@ Everything comes from your own PC install of *LEGO Batman: The Videogame* (2008)
 ||VILLAIN1.DAT  
 ||VILLAIN2.DAT  
 ||VILLAIN3.DAT
+||Audio/
+||Movies/
 
 #### Which executable?
 
@@ -48,6 +49,7 @@ Everything comes from your own PC install of *LEGO Batman: The Videogame* (2008)
 - Check yours with `certutil -hashfile LEGOBatman.exe SHA1` (Windows) or `sha1sum LEGOBatman.exe`.
 - Other releases (retail disc, other patches) have different code and are untested. Discovery and lifting will should on them, but the hooks in `runtime/` use fixed addresses (menu, options and input functions) that won't match.
 
+See 3. Installing for instructions.
 
 ## 1. Building
 
