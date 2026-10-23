@@ -43,10 +43,24 @@ static uint32_t load_pe(const char *path, uint32_t want_base, const char *modnam
     if (fread(buf, 1, n, f) != (size_t)n) rt_fatal("short read %s", path);
     fclose(f);
     uint32_t pe = rd32(buf + 0x3C);
-    if (rd32(buf + pe) != 0x4550) rt_fatal("not a PE file");
+    if (rd32(buf + pe) != 0x4550) rt_fatal("not a PE file: %s", path);
+    uint16_t machine = rd16(buf + pe + 4);
+    if (machine != 0x014c) {
+        if (machine == 0x8664) {
+            rt_fatal("%s is a 64-bit (x64) PE, but a 32-bit (x86) PE is required!\n"
+                     "On 64-bit Windows, copy d3dx9_35.dll from C:\\Windows\\SysWOW64\\ (NOT System32).",
+                     path);
+        } else {
+            rt_fatal("%s is not a 32-bit x86 PE (machine 0x%04x, expected 0x014c)", path, machine);
+        }
+    }
     uint16_t nsec = rd16(buf + pe + 6);
     uint16_t optsz = rd16(buf + pe + 20);
     const uint8_t *opt = buf + pe + 24;
+    uint16_t magic = rd16(opt);
+    if (magic != 0x010B) {
+        rt_fatal("%s optional header magic is 0x%04x (expected 0x010B for 32-bit PE)", path, magic);
+    }
     uint32_t pref = rd32(opt + 28);
     uint32_t base = want_base ? want_base : pref;
     uint32_t entry = rd32(opt + 16) ? base + rd32(opt + 16) : 0;
@@ -109,7 +123,14 @@ static uint32_t load_pe(const char *path, uint32_t want_base, const char *modnam
     extern void rt_module_add(const char *, uint32_t);
     rt_module_add(modname, base);
     LOG("loaded %s at %08x: entry %08x image %08x", path, base, entry, image_size);
-    if (!strcmp(modname, "LEGOBatman.exe")) { g_entry = entry; g_image_size = image_size; }
+    if (!strcmp(modname, "LEGOBatman.exe")) {
+        g_entry = entry;
+        g_image_size = image_size;
+        if (!rt_has_code(g_entry) && rt_has_code(0x0073d694u)) {
+            LOG("entry %08x has no recompiled code; falling back to 0073d694", g_entry);
+            g_entry = 0x0073d694u;
+        }
+    }
     return entry;
 }
 
@@ -226,8 +247,14 @@ int main(int argc, char **argv) {
     touch_setup_guest();
     for (int i = 0; i < ndll; i++) {
         uint32_t args[3] = {g_dll_bases[i], 1, 0};
-        if (dll_entries[i] && !rt_invoke(c, dll_entries[i], 3, args))
-            rt_fatal("DllMain of %s failed", g_dll_modules[i]);
+        if (dll_entries[i]) {
+            if (!rt_has_code(dll_entries[i])) {
+                LOG("warning: %s entry point %08x has no recompiled code; skipping DllMain",
+                    g_dll_modules[i], dll_entries[i]);
+            } else if (!rt_invoke(c, dll_entries[i], 3, args)) {
+                rt_fatal("DllMain of %s failed", g_dll_modules[i]);
+            }
+        }
     }
     /* push a return address that ends the process when main returns */
     c->r[4] -= 4;

@@ -52,6 +52,14 @@ static GuestFn lookup(uint32_t a) {
     return NULL;
 }
 
+int rt_has_code(uint32_t a) {
+    if (a >= GUEST_THUNK_BASE) {
+        uint32_t i = (a - GUEST_THUNK_BASE) / 4;
+        return i < g_nthunks && g_thunks[i].fn != NULL;
+    }
+    return lookup(a) != NULL;
+}
+
 void rt_call(CPU *c, uint32_t t) {
     if (t >= GUEST_THUNK_BASE) {
         uint32_t i = (t - GUEST_THUNK_BASE) / 4;

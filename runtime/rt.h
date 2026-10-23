@@ -47,6 +47,7 @@ void rt_register_shims(const ShimDef *defs);
 
 /* Call a guest function from the host with stdcall/cdecl args already chosen. */
 uint32_t rt_invoke(CPU *c, uint32_t fn, int nargs, const uint32_t *args);
+int rt_has_code(uint32_t addr);
 
 /* ---- guest heap ---- */
 uint32_t gmalloc(uint32_t size);
