@@ -5,7 +5,9 @@ def hasGen = file("${rootDir}/../gen").exists() && file("${rootDir}/../gen").lis
 android {
     namespace "com.tj.legobatman"
     compileSdkVersion 34
-    ndkVersion project.hasProperty('ndkVersion') ? project.property('ndkVersion') : null
+    if (project.hasProperty('ndkVersion')) {
+        ndkVersion project.property('ndkVersion')
+    }
     defaultConfig {
         applicationId "com.tj.legobatman"
         minSdkVersion 28
