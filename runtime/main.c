@@ -207,20 +207,49 @@ int main(int argc, char **argv) {
     const char *env = getenv("LB_LOG");
     if (env) g_log_level = atoi(env);
 #ifdef __ANDROID__
-    /* Game files live in the app's external files folder:
-     * <ext>/game holds the install (DATs, Movies, Audio, LEGOBatman.exe,
-     * d3dx9_35.dll, binkw32.dll), <ext>/save the saves, <ext>/log.txt the log. */
-    const char *ext = SDL_AndroidGetExternalStoragePath();
-    if (ext) {
-        char logp[512];
-        snprintf(g_game_dir, sizeof g_game_dir, "%s/game", ext);
-        snprintf(g_save_dir, sizeof g_save_dir, "%s/save", ext);
-        mkdir(g_game_dir, 0777);
-        mkdir(g_save_dir, 0777);
-        snprintf(logp, sizeof logp, "%s/log.txt", ext);
-        if (freopen(logp, "w", stderr)) setvbuf(stderr, NULL, _IOLBF, 0);
-        if (!env) g_log_level = 1;
+    /* Game files live in internalStorage/LegoBatman (/storage/emulated/0/LegoBatman).
+     * Falls back to /sdcard/LegoBatman or external files if not accessible. */
+    const char *candidates[] = {
+        "/storage/emulated/0/LegoBatman",
+        "/sdcard/LegoBatman",
+        NULL
+    };
+    int found = 0;
+    for (int i = 0; candidates[i]; i++) {
+        struct stat st;
+        if (stat(candidates[i], &st) == 0 && S_ISDIR(st.st_mode)) {
+            snprintf(g_game_dir, sizeof g_game_dir, "%s", candidates[i]);
+            snprintf(g_save_dir, sizeof g_save_dir, "%s/save", candidates[i]);
+            char logp[512];
+            snprintf(logp, sizeof logp, "%s/log.txt", candidates[i]);
+            if (freopen(logp, "w", stderr)) setvbuf(stderr, NULL, _IOLBF, 0);
+            found = 1;
+            break;
+        }
     }
+    if (!found) {
+        if (mkdir("/storage/emulated/0/LegoBatman", 0777) == 0 ||
+            stat("/storage/emulated/0/LegoBatman", &(struct stat){0}) == 0) {
+            snprintf(g_game_dir, sizeof g_game_dir, "/storage/emulated/0/LegoBatman");
+            snprintf(g_save_dir, sizeof g_save_dir, "/storage/emulated/0/LegoBatman/save");
+            char logp[512];
+            snprintf(logp, sizeof logp, "/storage/emulated/0/LegoBatman/log.txt");
+            if (freopen(logp, "w", stderr)) setvbuf(stderr, NULL, _IOLBF, 0);
+            found = 1;
+        } else {
+            const char *ext = SDL_AndroidGetExternalStoragePath();
+            if (ext) {
+                char logp[512];
+                snprintf(g_game_dir, sizeof g_game_dir, "%s/game", ext);
+                snprintf(g_save_dir, sizeof g_save_dir, "%s/save", ext);
+                snprintf(logp, sizeof logp, "%s/log.txt", ext);
+                if (freopen(logp, "w", stderr)) setvbuf(stderr, NULL, _IOLBF, 0);
+            }
+        }
+    }
+    mkdir(g_game_dir, 0777);
+    mkdir(g_save_dir, 0777);
+    if (!env) g_log_level = 1;
 #endif
     if (argc > 1) snprintf(g_game_dir, sizeof g_game_dir, "%s", argv[1]);
     if (argc > 2) snprintf(g_save_dir, sizeof g_save_dir, "%s", argv[2]);
