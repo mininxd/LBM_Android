@@ -211,17 +211,24 @@ int main(int argc, char **argv) {
      * Falls back to /sdcard/LegoBatman or external files if not accessible. */
     const char *candidates[] = {
         "/storage/emulated/0/LegoBatman",
+        "/storage/emulated/0/LegoBatman/game",
         "/sdcard/LegoBatman",
+        "/sdcard/LegoBatman/game",
         NULL
     };
     int found = 0;
     for (int i = 0; candidates[i]; i++) {
+        char testexe[512];
+        char testdat[512];
         struct stat st;
-        if (stat(candidates[i], &st) == 0 && S_ISDIR(st.st_mode)) {
+        snprintf(testexe, sizeof testexe, "%s/LEGOBatman.exe", candidates[i]);
+        snprintf(testdat, sizeof testdat, "%s/GAME.DAT", candidates[i]);
+        if (stat(testexe, &st) == 0 || stat(testdat, &st) == 0 ||
+            (i == 0 && stat(candidates[i], &st) == 0 && S_ISDIR(st.st_mode))) {
             snprintf(g_game_dir, sizeof g_game_dir, "%s", candidates[i]);
-            snprintf(g_save_dir, sizeof g_save_dir, "%s/save", candidates[i]);
+            snprintf(g_save_dir, sizeof g_save_dir, "/storage/emulated/0/LegoBatman/save");
             char logp[512];
-            snprintf(logp, sizeof logp, "%s/log.txt", candidates[i]);
+            snprintf(logp, sizeof logp, "/storage/emulated/0/LegoBatman/log.txt");
             if (freopen(logp, "w", stderr)) setvbuf(stderr, NULL, _IOLBF, 0);
             found = 1;
             break;

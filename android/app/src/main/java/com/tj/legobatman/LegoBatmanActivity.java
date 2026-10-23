@@ -8,12 +8,23 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
+import android.util.Log;
+import android.widget.Toast;
+import java.io.File;
 import org.libsdl.app.SDLActivity;
 
 public class LegoBatmanActivity extends SDLActivity {
+    private static final String TAG = "LegoBatman";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        checkStoragePermission();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         checkStoragePermission();
     }
 
@@ -21,6 +32,7 @@ public class LegoBatmanActivity extends SDLActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!Environment.isExternalStorageManager()) {
                 try {
+                    Toast.makeText(this, "Please grant All Files Access to load game data", Toast.LENGTH_LONG).show();
                     Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
                     intent.setData(Uri.parse("package:" + getPackageName()));
                     startActivity(intent);
@@ -39,6 +51,102 @@ public class LegoBatmanActivity extends SDLActivity {
                     Manifest.permission.WRITE_EXTERNAL_STORAGE
                 }, 100);
             }
+        }
+    }
+
+    private boolean containsGameFiles(File dir) {
+        if (dir == null || !dir.exists() || !dir.isDirectory()) {
+            return false;
+        }
+        File[] files = dir.listFiles();
+        if (files == null) {
+            return false;
+        }
+        for (File f : files) {
+            String name = f.getName().toLowerCase();
+            if (name.equals("legobatman.exe") || name.equals("game.dat")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private File resolveGameDirectory() {
+        File extDir = Environment.getExternalStorageDirectory();
+        File[] candidates = new File[] {
+            new File(extDir, "LegoBatman"),
+            new File(extDir, "LegoBatman/game"),
+            new File("/sdcard/LegoBatman"),
+            new File("/sdcard/LegoBatman/game"),
+            new File("/storage/emulated/0/LegoBatman"),
+            new File("/storage/emulated/0/LegoBatman/game")
+        };
+
+        for (File candidate : candidates) {
+            if (containsGameFiles(candidate)) {
+                Log.i(TAG, "Found game files in: " + candidate.getAbsolutePath());
+                return candidate;
+            }
+        }
+
+        // Check legacy paths under Android/data/.../files/game
+        try {
+            File legacyExt = super.getExternalFilesDir(null);
+            if (legacyExt != null) {
+                File legacyGame = new File(legacyExt, "game");
+                if (containsGameFiles(legacyGame)) {
+                    Log.i(TAG, "Found game files in legacy path: " + legacyGame.getAbsolutePath());
+                    return legacyGame;
+                }
+                if (containsGameFiles(legacyExt)) {
+                    Log.i(TAG, "Found game files in legacy files dir: " + legacyExt.getAbsolutePath());
+                    return legacyExt;
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to check legacy external files dir: " + e.getMessage());
+        }
+
+        // Default to LegoBatman (or LegoBatman/game if game folder exists)
+        File defaultDir = new File(extDir, "LegoBatman");
+        File gameSub = new File(defaultDir, "game");
+        if (gameSub.exists() && gameSub.isDirectory()) {
+            return gameSub;
+        }
+        defaultDir.mkdirs();
+        return defaultDir;
+    }
+
+    @Override
+    protected String[] getArguments() {
+        File gameDir = resolveGameDirectory();
+        File internalDir = new File(Environment.getExternalStorageDirectory(), "LegoBatman");
+        File saveDir = new File(internalDir, "save");
+        if (!saveDir.exists()) {
+            saveDir.mkdirs();
+        }
+
+        Log.i(TAG, "Arguments: game_dir=" + gameDir.getAbsolutePath() + ", save_dir=" + saveDir.getAbsolutePath());
+        return new String[] { gameDir.getAbsolutePath(), saveDir.getAbsolutePath() };
+    }
+
+    @Override
+    public File getExternalFilesDir(String type) {
+        try {
+            File base = new File(Environment.getExternalStorageDirectory(), "LegoBatman");
+            if (!base.exists()) {
+                base.mkdirs();
+            }
+            if (type != null) {
+                File sub = new File(base, type);
+                if (!sub.exists()) {
+                    sub.mkdirs();
+                }
+                return sub;
+            }
+            return base;
+        } catch (Exception e) {
+            return super.getExternalFilesDir(type);
         }
     }
 
