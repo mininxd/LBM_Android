@@ -263,10 +263,10 @@ int main(int argc, char **argv) {
         NULL
     };
     for (int i = 0; log_targets[i]; i++) {
-        g_direct_log = fopen(log_targets[i], "w");
+        g_direct_log = fopen(log_targets[i], "a");
         if (g_direct_log) {
             setvbuf(g_direct_log, NULL, _IONBF, 0);
-            freopen(log_targets[i], "w", stderr);
+            freopen(log_targets[i], "a", stderr);
             setvbuf(stderr, NULL, _IONBF, 0);
             break;
         }
@@ -276,14 +276,15 @@ int main(int argc, char **argv) {
         if (ext) {
             char logp[512];
             snprintf(logp, sizeof logp, "%s/log.txt", ext);
-            g_direct_log = fopen(logp, "w");
+            g_direct_log = fopen(logp, "a");
             if (g_direct_log) {
                 setvbuf(g_direct_log, NULL, _IONBF, 0);
-                freopen(logp, "w", stderr);
+                freopen(logp, "a", stderr);
                 setvbuf(stderr, NULL, _IONBF, 0);
             }
         }
     }
+    LOG("--- LEGO Batman native main started ---");
 
     /* Candidate paths for game files */
     const char *candidates[] = {
@@ -310,13 +311,17 @@ int main(int argc, char **argv) {
     mkdir(g_game_dir, 0777);
     mkdir(g_save_dir, 0777);
 #endif
+#ifndef __ANDROID__
     if (argc > 1) snprintf(g_game_dir, sizeof g_game_dir, "%s", argv[1]);
     if (argc > 2) snprintf(g_save_dir, sizeof g_save_dir, "%s", argv[2]);
+#endif
     MEM = mmap(NULL, 1ull << 32, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
     if (MEM == MAP_FAILED) rt_fatal("cannot reserve guest address space");
     /* keep the null page inaccessible to catch null derefs */
     mprotect(MEM, 0x10000, PROT_NONE);
     rt_init_shims();
+    extern void rt_modules_init(void);
+    rt_modules_init();
     if (chdir(g_game_dir) != 0) rt_fatal("chdir %s", g_game_dir);
     extern void platform_init(void);
     platform_init();

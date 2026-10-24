@@ -7,9 +7,6 @@ def make_d3db(src, dst):
         d = bytearray(f.read())
 
     patches = [
-        (b"SDL_main\x00", b"OLD_main\x00"),
-        (b"g_fn_table_exe\x00", b"g_fn_table_old\x00"),
-        (b"g_fn_count_exe\x00", b"g_fn_count_old\x00"),
         (b"libmain.so\x00", b"libd3db.so\x00"),
     ]
 

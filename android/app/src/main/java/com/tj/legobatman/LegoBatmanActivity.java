@@ -16,27 +16,48 @@ import org.libsdl.app.SDLActivity;
 public class LegoBatmanActivity extends SDLActivity {
     private static final String TAG = "LegoBatman";
 
+    public static void appendToLog(String message) {
+        String[] paths = new String[] {
+            "/storage/emulated/0/LegoBatman/log.txt",
+            "/sdcard/LegoBatman/log.txt"
+        };
+        for (String p : paths) {
+            try {
+                File f = new File(p);
+                if (f.getParentFile() != null && !f.getParentFile().exists()) {
+                    f.getParentFile().mkdirs();
+                }
+                java.io.FileWriter fw = new java.io.FileWriter(f, true);
+                fw.write(message + "\n");
+                fw.flush();
+                fw.close();
+            } catch (Exception ignored) {}
+        }
+    }
+
+    @Override
+    public void loadLibraries() {
+        appendToLog("--- Loading native libraries ---");
+        try {
+            super.loadLibraries();
+            appendToLog("--- Native libraries loaded successfully ---");
+        } catch (Throwable t) {
+            appendToLog("FATAL: Error loading native libraries: " + t.getMessage());
+            java.io.StringWriter sw = new java.io.StringWriter();
+            t.printStackTrace(new java.io.PrintWriter(sw));
+            appendToLog(sw.toString());
+            throw t;
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        appendToLog("--- LegoBatmanActivity onCreate() ---");
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
             try {
-                String[] paths = new String[] {
-                    "/storage/emulated/0/LegoBatman/log.txt",
-                    "/sdcard/LegoBatman/log.txt"
-                };
-                for (String p : paths) {
-                    File f = new File(p);
-                    if (f.getParentFile() != null && !f.getParentFile().exists()) {
-                        f.getParentFile().mkdirs();
-                    }
-                    java.io.FileWriter fw = new java.io.FileWriter(f, true);
-                    java.io.PrintWriter pw = new java.io.PrintWriter(fw);
-                    pw.println("\n=== UNCAUGHT JAVA EXCEPTION ===");
-                    throwable.printStackTrace(pw);
-                    pw.println("===============================\n");
-                    pw.flush();
-                    fw.close();
-                }
+                java.io.StringWriter sw = new java.io.StringWriter();
+                throwable.printStackTrace(new java.io.PrintWriter(sw));
+                appendToLog("\n=== UNCAUGHT JAVA EXCEPTION ===\n" + sw.toString() + "===============================\n");
             } catch (Exception ignored) {}
             android.os.Process.killProcess(android.os.Process.myPid());
         });
@@ -174,9 +195,6 @@ public class LegoBatmanActivity extends SDLActivity {
 
     @Override
     protected String[] getLibraries() {
-        try {
-            System.loadLibrary("d3db");
-        } catch (Throwable ignored) {}
-        return new String[] { "SDL2", "dxvk_d3d9", "main" };
+        return new String[] { "SDL2", "dxvk_d3d9", "d3db", "main" };
     }
 }

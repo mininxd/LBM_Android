@@ -36,7 +36,7 @@ static GuestFn lookup(uint32_t a) {
     for (unsigned m = 0; m < g_nmodules; m++) {
         const FnEntry *t = g_modules[m].table;
         unsigned n = rt_module_count(m);
-        if (!n || a < t[0].addr || a > t[n - 1].addr) continue;
+        if (!t || !n || a < t[0].addr || a > t[n - 1].addr) continue;
         unsigned lo = 0, hi = n;
         while (lo < hi) {
             unsigned mid = (lo + hi) / 2;
