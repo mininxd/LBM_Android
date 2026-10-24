@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <SDL2/SDL.h>
+
 uint8_t *MEM;
 int g_log_level = 1;
 char g_game_dir[1024] = ".";
@@ -18,13 +20,17 @@ uint32_t g_entry;
 int g_is_gog = 0;
 
 void rt_fatal(const char *fmt, ...) {
+    char buf[2048];
     va_list ap;
     va_start(ap, fmt);
-    fprintf(stderr, "FATAL: ");
-    vfprintf(stderr, fmt, ap);
-    fputc('\n', stderr);
+    vsnprintf(buf, sizeof buf, fmt, ap);
     va_end(ap);
+
+    fprintf(stderr, "FATAL: %s\n", buf);
     fflush(stderr);
+
+    /* Show on-screen error dialog on Android/desktop window before terminating */
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO Batman Error", buf, NULL);
     abort();
 }
 
@@ -253,7 +259,7 @@ int main(int argc, char **argv) {
             snprintf(g_save_dir, sizeof g_save_dir, "/storage/emulated/0/LegoBatman/save");
             char logp[512];
             snprintf(logp, sizeof logp, "/storage/emulated/0/LegoBatman/log.txt");
-            if (freopen(logp, "w", stderr)) setvbuf(stderr, NULL, _IOLBF, 0);
+            if (freopen(logp, "w", stderr)) setvbuf(stderr, NULL, _IONBF, 0);
             found = 1;
         } else {
             const char *ext = SDL_AndroidGetExternalStoragePath();
@@ -262,7 +268,7 @@ int main(int argc, char **argv) {
                 snprintf(g_game_dir, sizeof g_game_dir, "%s/game", ext);
                 snprintf(g_save_dir, sizeof g_save_dir, "%s/save", ext);
                 snprintf(logp, sizeof logp, "%s/log.txt", ext);
-                if (freopen(logp, "w", stderr)) setvbuf(stderr, NULL, _IOLBF, 0);
+                if (freopen(logp, "w", stderr)) setvbuf(stderr, NULL, _IONBF, 0);
             }
         }
     }
