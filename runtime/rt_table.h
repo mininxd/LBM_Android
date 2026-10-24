@@ -6,3 +6,4 @@ typedef struct { const char *name; const FnEntry *table; unsigned count; } FnMod
 extern FnModule g_modules[];
 extern const unsigned g_nmodules;
 void rt_modules_init(void);
+void rt_modules_register_data(const char *modname, const char *name, uint32_t addr);

@@ -16,48 +16,77 @@ import org.libsdl.app.SDLActivity;
 public class LegoBatmanActivity extends SDLActivity {
     private static final String TAG = "LegoBatman";
 
-    public static void appendToLog(String message) {
-        String[] paths = new String[] {
-            "/storage/emulated/0/LegoBatman/log.txt",
-            "/sdcard/LegoBatman/log.txt"
-        };
-        for (String p : paths) {
-            try {
-                File f = new File(p);
-                if (f.getParentFile() != null && !f.getParentFile().exists()) {
-                    f.getParentFile().mkdirs();
-                }
-                java.io.FileWriter fw = new java.io.FileWriter(f, true);
-                fw.write(message + "\n");
-                fw.flush();
-                fw.close();
-            } catch (Exception ignored) {}
-        }
+    private static final String LOG_PATH = "/sdcard/LegoBatman/log.txt";
+
+    public static synchronized void resetLog() {
+        try {
+            File f = new File(LOG_PATH);
+            if (f.getParentFile() != null && !f.getParentFile().exists()) {
+                f.getParentFile().mkdirs();
+            }
+            java.io.FileWriter fw = new java.io.FileWriter(f, false);
+            fw.write("");
+            fw.flush();
+            fw.close();
+        } catch (Exception ignored) {}
+    }
+
+    public static synchronized void writeLog(String message) {
+        Log.i(TAG, message);
+        try {
+            File f = new File(LOG_PATH);
+            if (f.getParentFile() != null && !f.getParentFile().exists()) {
+                f.getParentFile().mkdirs();
+            }
+            java.io.FileWriter fw = new java.io.FileWriter(f, true);
+            fw.write(message + "\n");
+            fw.flush();
+            fw.close();
+        } catch (Exception ignored) {}
+    }
+
+    @Override
+    public int messageboxShowMessageBox(
+            final int flags,
+            final String title,
+            final String message,
+            final int[] buttonFlags,
+            final int[] buttonIds,
+            final String[] buttonTexts,
+            final int[] colors) {
+        writeLog("\n[SDL ERROR WINDOW POPUP]");
+        writeLog("Title: " + title);
+        writeLog("Message: " + message);
+        writeLog("[END ERROR WINDOW POPUP]\n");
+        return super.messageboxShowMessageBox(flags, title, message, buttonFlags, buttonIds, buttonTexts, colors);
     }
 
     @Override
     public void loadLibraries() {
-        appendToLog("--- Loading native libraries ---");
+        writeLog("--- Loading native libraries ---");
         try {
             super.loadLibraries();
-            appendToLog("--- Native libraries loaded successfully ---");
+            writeLog("--- Native libraries loaded successfully ---");
         } catch (Throwable t) {
-            appendToLog("FATAL: Error loading native libraries: " + t.getMessage());
+            writeLog("FATAL: Error loading native libraries: " + t.getMessage());
             java.io.StringWriter sw = new java.io.StringWriter();
             t.printStackTrace(new java.io.PrintWriter(sw));
-            appendToLog(sw.toString());
+            writeLog(sw.toString());
             throw t;
         }
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        appendToLog("--- LegoBatmanActivity onCreate() ---");
+        resetLog();
+        writeLog("=== LEGO Batman Session Started ===");
+        writeLog("Device: " + Build.MANUFACTURER + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ", API " + Build.VERSION.SDK_INT + ")");
+        writeLog("--- LegoBatmanActivity onCreate() ---");
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
             try {
                 java.io.StringWriter sw = new java.io.StringWriter();
                 throwable.printStackTrace(new java.io.PrintWriter(sw));
-                appendToLog("\n=== UNCAUGHT JAVA EXCEPTION ===\n" + sw.toString() + "===============================\n");
+                writeLog("\n=== UNCAUGHT JAVA EXCEPTION ===\n" + sw.toString() + "===============================\n");
             } catch (Exception ignored) {}
             android.os.Process.killProcess(android.os.Process.myPid());
         });
@@ -195,6 +224,6 @@ public class LegoBatmanActivity extends SDLActivity {
 
     @Override
     protected String[] getLibraries() {
-        return new String[] { "SDL2", "dxvk_d3d9", "d3db", "main" };
+        return new String[] { "SDL2", "dxvk_d3d9", "main" };
     }
 }

@@ -35,19 +35,12 @@ void rt_fatal(const char *fmt, ...) {
         fflush(g_direct_log);
     }
 
-    /* Force write to every possible path directly so log.txt is always saved */
-    const char *paths[] = {
-        "/storage/emulated/0/LegoBatman/log.txt",
-        "/sdcard/LegoBatman/log.txt",
-        NULL
-    };
-    for (int i = 0; paths[i]; i++) {
-        FILE *f = fopen(paths[i], "a");
-        if (f) {
-            fprintf(f, "\nFATAL: %s\n", buf);
-            fflush(f);
-            fclose(f);
-        }
+    FILE *f = fopen("/sdcard/LegoBatman/log.txt", "a");
+    if (!f) f = fopen("/storage/emulated/0/LegoBatman/log.txt", "a");
+    if (f) {
+        fprintf(f, "\nFATAL: %s\n", buf);
+        fflush(f);
+        fclose(f);
     }
 
     /* Show on-screen error dialog on Android/desktop window before terminating */
@@ -126,11 +119,15 @@ static uint32_t load_pe(const char *path, uint32_t want_base, const char *modnam
             const char *nm = (const char *)(MEM + base + M32(names + 4 * i));
             uint16_t o = M16(ords + 2 * i);
             rt_register_data(modname, nm, base + M32(funcs + 4 * o));
+            rt_modules_register_data(modname, nm, base + M32(funcs + 4 * o));
         }
         for (uint32_t i = 0; i < nfuncs; i++) {
             char nm[16];
             snprintf(nm, sizeof nm, "#%u", ordbase + i);
-            if (M32(funcs + 4 * i)) rt_register_data(modname, nm, base + M32(funcs + 4 * i));
+            if (M32(funcs + 4 * i)) {
+                rt_register_data(modname, nm, base + M32(funcs + 4 * i));
+                rt_modules_register_data(modname, nm, base + M32(funcs + 4 * i));
+            }
         }
     }
     /* imports */

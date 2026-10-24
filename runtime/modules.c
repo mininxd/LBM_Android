@@ -18,6 +18,13 @@ FnModule g_modules[] = {
 };
 const unsigned g_nmodules = sizeof g_modules / sizeof g_modules[0];
 
+typedef void (*RegisterDataFn)(const char *, const char *, uint32_t);
+static RegisterDataFn s_d3db_reg_data = NULL;
+
+void rt_modules_register_data(const char *modname, const char *name, uint32_t addr) {
+    if (s_d3db_reg_data) s_d3db_reg_data(modname, name, addr);
+}
+
 void rt_modules_init(void) {
     g_modules[0].table = g_fn_table_exe;
     g_modules[0].count = g_fn_count_exe;
@@ -33,6 +40,14 @@ void rt_modules_init(void) {
         *d3db_mem = MEM;
         LOG("d3db: synchronized MEM guest pointer (%p)", (void *)MEM);
     }
+
+    void (*d3db_init_shims)(void) = (void (*)(void))dlsym(h, "rt_init_shims");
+    if (d3db_init_shims) {
+        d3db_init_shims();
+        LOG("d3db: initialized d3db internal shims and thunks");
+    }
+
+    s_d3db_reg_data = (RegisterDataFn)dlsym(h, "rt_register_data");
 
     const FnEntry *t_d3dx9 = (const FnEntry *)dlsym(h, "g_fn_table_d3dx9");
     const unsigned *c_d3dx9 = (const unsigned *)dlsym(h, "g_fn_count_d3dx9");

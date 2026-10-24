@@ -69,6 +69,9 @@ void rt_call(CPU *c, uint32_t t) {
                 rt_fatal("unimplemented import %s (called from %08x)", g_thunks[i].name, M32(c->r[4]));
             g_thunks[i].fn(c);
             return;
+        } else {
+            rt_fatal("unknown import thunk index %u (addr %08x, called from %08x, registered %u)",
+                     i, t, M32(c->r[4]), g_nthunks);
         }
     }
     GuestFn fn = lookup(t);
