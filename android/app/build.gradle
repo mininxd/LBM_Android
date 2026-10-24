@@ -29,11 +29,16 @@ android {
             if (hasGen) {
                 externalNativeBuild { cmake { arguments "-DCMAKE_BUILD_TYPE=Release" } }
             }
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             debuggable true
             jniDebuggable false
         }
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.debug
         }
     }
