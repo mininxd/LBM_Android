@@ -21,8 +21,8 @@
 
 /* ---- logging ---- */
 extern int g_log_level;
-#define LOG(...) do { if (g_log_level > 0) { fprintf(stderr, __VA_ARGS__); fputc('\n', stderr); } } while (0)
-#define TRACE(...) do { if (g_log_level > 1) { fprintf(stderr, __VA_ARGS__); fputc('\n', stderr); } } while (0)
+#define LOG(...) do { if (g_log_level > 0) { fprintf(stderr, __VA_ARGS__); fputc('\n', stderr); fflush(stderr); } } while (0)
+#define TRACE(...) do { if (g_log_level > 1) { fprintf(stderr, __VA_ARGS__); fputc('\n', stderr); fflush(stderr); } } while (0)
 void rt_fatal(const char *fmt, ...) __attribute__((noreturn, format(printf, 1, 2)));
 
 /* ---- shims ---- */

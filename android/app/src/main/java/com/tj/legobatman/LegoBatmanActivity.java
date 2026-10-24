@@ -18,6 +18,28 @@ public class LegoBatmanActivity extends SDLActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            try {
+                String[] paths = new String[] {
+                    "/storage/emulated/0/LegoBatman/log.txt",
+                    "/sdcard/LegoBatman/log.txt"
+                };
+                for (String p : paths) {
+                    File f = new File(p);
+                    if (f.getParentFile() != null && !f.getParentFile().exists()) {
+                        f.getParentFile().mkdirs();
+                    }
+                    java.io.FileWriter fw = new java.io.FileWriter(f, true);
+                    java.io.PrintWriter pw = new java.io.PrintWriter(fw);
+                    pw.println("\n=== UNCAUGHT JAVA EXCEPTION ===");
+                    throwable.printStackTrace(pw);
+                    pw.println("===============================\n");
+                    pw.flush();
+                    fw.close();
+                }
+            } catch (Exception ignored) {}
+            android.os.Process.killProcess(android.os.Process.myPid());
+        });
         super.onCreate(savedInstanceState);
         checkStoragePermission();
     }
