@@ -337,10 +337,10 @@ static void video_settings_input_impl(CPU *c, void (*guest_fn)(CPU *)) {
     LOG("touch: controls %s", g_touch_on ? "on" : "off");
 }
 
-extern "C" void f_6C42C0_guest(CPU *c);
-extern "C" void f_6C42C0(CPU *c) { video_settings_input_impl(c, f_6C42C0_guest); }
-extern "C" void f_6C4290_guest(CPU *c);
-extern "C" void f_6C4290(CPU *c) { video_settings_input_impl(c, f_6C4290_guest); }
+extern "C" __attribute__((weak)) void f_6C42C0_guest(CPU *c);
+extern "C" void f_6C42C0(CPU *c) { if (f_6C42C0_guest) video_settings_input_impl(c, f_6C42C0_guest); }
+extern "C" __attribute__((weak)) void f_6C4290_guest(CPU *c);
+extern "C" void f_6C4290(CPU *c) { if (f_6C4290_guest) video_settings_input_impl(c, f_6C4290_guest); }
 
 // Video Settings draw: values for the repurposed items.
 // Steam: f_6C80D0, GOG: f_6C80A0.
@@ -370,10 +370,10 @@ static void video_settings_draw_impl(CPU *c, void (*guest_fn)(CPU *)) {
     M32(asp_text) = aspect_text;
 }
 
-extern "C" void f_6C80D0_guest(CPU *c);
-extern "C" void f_6C80D0(CPU *c) { video_settings_draw_impl(c, f_6C80D0_guest); }
-extern "C" void f_6C80A0_guest(CPU *c);
-extern "C" void f_6C80A0(CPU *c) { video_settings_draw_impl(c, f_6C80A0_guest); }
+extern "C" __attribute__((weak)) void f_6C80D0_guest(CPU *c);
+extern "C" void f_6C80D0(CPU *c) { if (f_6C80D0_guest) video_settings_draw_impl(c, f_6C80D0_guest); }
+extern "C" __attribute__((weak)) void f_6C80A0_guest(CPU *c);
+extern "C" void f_6C80A0(CPU *c) { if (f_6C80A0_guest) video_settings_draw_impl(c, f_6C80A0_guest); }
 
 // The display mode list builder drops modes under 640x480, which hides low resolution scales.
 // It sorts the surviving modes with qsort right after filtering; refill array there.
@@ -392,24 +392,24 @@ static void qsort_display_modes_impl(CPU *c, void (*guest_fn)(CPU *), uint32_t e
         }
         M32(obj + 0x618) = n;
     }
-    guest_fn(c);
+    if (guest_fn) guest_fn(c);
 }
 
-extern "C" void f_7401A0_guest(CPU *c);
-extern "C" void f_7401A0(CPU *c) { qsort_display_modes_impl(c, f_7401A0_guest, 0x52E3BDu); }
-extern "C" void f_740170_guest(CPU *c);
-extern "C" void f_740170(CPU *c) { qsort_display_modes_impl(c, f_740170_guest, 0x52E39Du); }
+extern "C" __attribute__((weak)) void f_7401A0_guest(CPU *c);
+extern "C" void f_7401A0(CPU *c) { if (f_7401A0_guest) qsort_display_modes_impl(c, f_7401A0_guest, 0x52E3BDu); }
+extern "C" __attribute__((weak)) void f_740170_guest(CPU *c);
+extern "C" void f_740170(CPU *c) { if (f_740170_guest) qsort_display_modes_impl(c, f_740170_guest, 0x52E39Du); }
 
 // pcconfig "Widescreen" setter, used at load and by the menu's Accept.
 // Steam: f_524860, GOG: f_524840.
-extern "C" void f_524860_guest(CPU *c);
+extern "C" __attribute__((weak)) void f_524860_guest(CPU *c);
 extern "C" void f_524860(CPU *c) {
-    f_524860_guest(c);
+    if (f_524860_guest) f_524860_guest(c);
     if (available()) M32(aspect_addr()) = ASPECT_FROM_RES;
 }
-extern "C" void f_524840_guest(CPU *c);
+extern "C" __attribute__((weak)) void f_524840_guest(CPU *c);
 extern "C" void f_524840(CPU *c) {
-    f_524840_guest(c);
+    if (f_524840_guest) f_524840_guest(c);
     if (available()) M32(aspect_addr()) = ASPECT_FROM_RES;
 }
 
