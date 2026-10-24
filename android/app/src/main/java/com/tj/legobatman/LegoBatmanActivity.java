@@ -152,6 +152,9 @@ public class LegoBatmanActivity extends SDLActivity {
 
     @Override
     protected String[] getLibraries() {
+        try {
+            System.loadLibrary("d3db");
+        } catch (Throwable ignored) {}
         return new String[] { "SDL2", "dxvk_d3d9", "main" };
     }
 }

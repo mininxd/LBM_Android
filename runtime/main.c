@@ -15,6 +15,7 @@ char g_game_dir[1024] = ".";
 char g_save_dir[1024] = "./save";
 uint32_t g_image_size;
 uint32_t g_entry;
+int g_is_gog = 0;
 
 void rt_fatal(const char *fmt, ...) {
     va_list ap;
@@ -126,9 +127,20 @@ static uint32_t load_pe(const char *path, uint32_t want_base, const char *modnam
     if (!strcmp(modname, "LEGOBatman.exe")) {
         g_entry = entry;
         g_image_size = image_size;
-        if (!rt_has_code(g_entry) && rt_has_code(0x0073d694u)) {
-            LOG("entry %08x has no recompiled code; falling back to 0073d694", g_entry);
-            g_entry = 0x0073d694u;
+        if (entry == 0x0073d6a3u) {
+            g_is_gog = 1;
+            LOG("detected GOG executable release");
+        }
+        if (!rt_has_code(g_entry)) {
+            if (rt_has_code(0x0073d6a3u)) {
+                LOG("entry %08x has no recompiled code; falling back to GOG entry 0073d6a3", g_entry);
+                g_entry = 0x0073d6a3u;
+                g_is_gog = 1;
+            } else if (rt_has_code(0x0073d694u)) {
+                LOG("entry %08x has no recompiled code; falling back to Steam entry 0073d694", g_entry);
+                g_entry = 0x0073d694u;
+                g_is_gog = 0;
+            }
         }
     }
     return entry;
